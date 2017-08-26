@@ -26,12 +26,18 @@ while (<$in_fh>) {
     my $init_date = DateTime->new(year => $year, month => $month, day => $day, time_zone => 'Japan');
 
     # 本日までの経過日数を計算する。
-    my $duration = $today - $init_date;
+    # (なお、in_unitsだと「何ヶ月と何日間」の「何日間」しか返さないので、
+    #  delta_daysを使うことにする。だが、delta_daysは二つの日付の差の絶対値を
+    #  日数で表すので、常に0以上を返す。正負の判定には使えない。そのため、
+    #  $duration と $days_passed の両方を使うことにする。なんだか冗長である。
+    #  何かもっと良い方法がありそうな気もするが、とりあえずこうしておく。)
+
+    my $duration = $today->subtract_datetime($init_date);
+    my $days_passed = $today->delta_days($init_date)->in_units('days');
     if ($duration->is_negative()) {
       print "  ⚠️ $name_of_drug\の開始日が未来になっているので、修正してね\n";
       next;
     }
-    my $days_passed = $duration->in_units('days');
 
     # 本日開始時点での残量を計算する。
     my $remainder;
@@ -53,7 +59,14 @@ while (<$in_fh>) {
 
     # 今日はこの薬を飲む日である、という場合。
     for (my $f=1; $f <= $freq_per_day; $f++) {
-      print "  💊 $name_of_drug [$f\回目]: 残り数量 $remainder → ";
+      if ($remainder > 1) { # 今回飲んでもまだ残りがある
+        print "  💊 ";
+      } elsif ($remainder == 1) { # 今回飲むと残量が0になる
+        print "  🏥 ";
+      } else { # すでに在庫切れになっている
+        print "  😱 ";
+      }
+      print "$name_of_drug [$f\回目]: 残り数量 $remainder → ";
       $remainder -= $dose;
       print "$remainder\n";
     }
