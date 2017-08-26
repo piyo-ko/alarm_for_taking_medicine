@@ -32,15 +32,12 @@ while (<$in_fh>) {
     #  $duration と $days_passed の両方を使うことにする。なんだか冗長である。
     #  何かもっと良い方法がありそうな気もするが、とりあえずこうしておく。)
 
-    #my $duration = $today - $init_date;
     my $duration = $today->subtract_datetime($init_date);
     my $days_passed = $today->delta_days($init_date)->in_units('days');
-    #print "[*debugging...] \$days_passed = $days_passed\n";
     if ($duration->is_negative()) {
       print "  ⚠️ $name_of_drug\の開始日が未来になっているので、修正してね\n";
       next;
     }
-    #my $days_passed = $duration->in_units('days');
 
     # 本日開始時点での残量を計算する。
     my $remainder;
@@ -49,16 +46,6 @@ while (<$in_fh>) {
     } elsif ($interval > 1) { # $interval 日に1回、服用する日がやってくる薬
       my $num_of_days_where_drug_taken = int(($days_passed + $interval - 1) / $interval);
       $remainder = $init_amount - $dose * $freq_per_day * $num_of_days_where_drug_taken;
-      #print "[debugging...] \$today = $today\n";
-      #print "[debugging...] \$init_date = $init_date\n";
-      #print "[debugging...] \$duration = $duration\n";
-      #print "[debugging...] \$days_passed = $days_passed\n";
-      #print "[debugging...] \$num_of_days_where_drug_taken = $num_of_days_where_drug_taken\n";
-      #print "[debugging...] \$interval = $interval\n";
-      #print "[debugging...] \$remainder = $remainder\n";
-      #print "[debugging...] \$init_amount = $init_amount\n";
-      #print "[debugging...] \$dose = $dose\n";
-      #print "[debugging...] \$freq_per_day = $freq_per_day\n";
     } else {
       print "  ⚠️ $name_of_drug\の服用が何日に1回なのか、設定が変なので、修正してね\n";
       next;
